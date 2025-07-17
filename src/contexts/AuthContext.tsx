@@ -28,30 +28,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    // On initial load, check for user and token in localStorage to persist session
     try {
       const savedUser = localStorage.getItem('user');
-      const savedToken = localStorage.getItem('authToken');
-      if (savedUser && savedToken) {
+      if (savedUser) {
         setUser(JSON.parse(savedUser));
-      } else {
-        // If either is missing, clear both to ensure a clean state
-        localStorage.removeItem('user');
-        localStorage.removeItem('authToken');
       }
     } catch (error) {
-      console.error("Failed to initialize auth state from localStorage", error);
+      console.error("Failed to parse user from localStorage", error);
       localStorage.removeItem('user');
-      localStorage.removeItem('authToken');
     }
   }, []);
 
   const login = async (username: string, password: string): Promise<boolean> => {
     const response = await loginUser(username, password);
-    if (response.success && response.user && response.token) {
+    if (response.success && response.user) {
       setUser(response.user);
       localStorage.setItem('user', JSON.stringify(response.user));
-      localStorage.setItem('authToken', response.token); // Store JWT
       return true;
     }
     return false;
@@ -59,14 +51,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const signup = async (username: string, password: string, confirmPassword: string): Promise<boolean> => {
     if (password !== confirmPassword || password.length < 6) {
-      // Basic validation, can be enhanced
       return false;
     }
     const response = await signupUser(username, password);
-    if (response.success && response.user && response.token) {
+    if (response.success && response.user) {
       setUser(response.user);
       localStorage.setItem('user', JSON.stringify(response.user));
-      localStorage.setItem('authToken', response.token); // Store JWT
       return true;
     }
     return false;
@@ -75,7 +65,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const logout = () => {
     setUser(null);
     localStorage.removeItem('user');
-    localStorage.removeItem('authToken'); // Important: Clear JWT on logout
   };
 
   const value = {
