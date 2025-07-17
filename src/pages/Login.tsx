@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { useAuth } from '../contexts/AuthContext';
 import { LogIn, User, Lock, Eye, EyeOff } from 'lucide-react';
+import { loginUser } from '../services/apiService';
+import { useAuth } from '../contexts/AuthContext';
 
 const Login: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -10,8 +11,8 @@ const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
@@ -36,8 +37,9 @@ const Login: React.FC = () => {
     setIsLoading(true);
     setErrors({});
     try {
-      const success = await login(username, password);
-      if (success) {
+      const result = await loginUser(username, password);
+      if (result.success && result.token && result.user) {
+        login(result.token, result.user);
         navigate('/dashboard');
       } else {
         setErrors({ general: 'Invalid username or password' });

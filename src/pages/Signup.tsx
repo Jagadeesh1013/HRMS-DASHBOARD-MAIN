@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { useAuth } from '../contexts/AuthContext';
 import { UserPlus, User, Lock, Eye, EyeOff } from 'lucide-react';
+import { signupUser } from '../services/apiService';
+import { useAuth } from '../contexts/AuthContext';
 
 const Signup: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -12,8 +13,8 @@ const Signup: React.FC = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [isLoading, setIsLoading] = useState(false);
-  const { signup } = useAuth();
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
@@ -47,8 +48,11 @@ const Signup: React.FC = () => {
     
     setIsLoading(true);
     try {
-      const success = await signup(username, password, confirmPassword);
-      if (success) {
+      console.log("Form Values:", { username, password, confirmPassword });
+      const result = await signupUser(username, password, confirmPassword);
+      console.log("Signup Response:", result);
+      if (result.success && result.token && result.user) {
+        login(result.token, result.user);
         navigate('/dashboard');
       } else {
         setErrors({ general: 'Signup failed. Please try again.' });

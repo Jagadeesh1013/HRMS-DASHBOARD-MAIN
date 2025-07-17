@@ -1,5 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { loginUser, signupUser } from '../services/apiService';
+import React, { createContext, useState, useEffect, useContext } from 'react';
 
 interface User {
   username: string;
@@ -7,73 +6,60 @@ interface User {
 }
 
 interface AuthContextType {
-  user: User | null;
   isAuthenticated: boolean;
-  login: (username: string, password: string) => Promise<boolean>;
-  signup: (username: string, password: string, confirmPassword: string) => Promise<boolean>;
+  token: string | null;
+  loading: boolean;
+  user: User | null;
+  login: (token: string, user: User) => void;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
-
-export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      const savedUser = localStorage.getItem('user');
-      if (savedUser) {
-        setUser(JSON.parse(savedUser));
-      }
-    } catch (error) {
-      console.error("Failed to parse user from localStorage", error);
-      localStorage.removeItem('user');
+    const savedToken = localStorage.getItem('authToken');
+    const savedUser = localStorage.getItem('authUser');
+    if (savedToken && savedUser) {
+      setToken(savedToken);
+      setUser(JSON.parse(savedUser));
+      setIsAuthenticated(true);
     }
+    setLoading(false);
   }, []);
 
-  const login = async (username: string, password: string): Promise<boolean> => {
-    const response = await loginUser(username, password);
-    if (response.success && response.user) {
-      setUser(response.user);
-      localStorage.setItem('user', JSON.stringify(response.user));
-      return true;
-    }
-    return false;
-  };
-
-  const signup = async (username: string, password: string, confirmPassword: string): Promise<boolean> => {
-    if (password !== confirmPassword || password.length < 6) {
-      return false;
-    }
-    const response = await signupUser(username, password);
-    if (response.success && response.user) {
-      setUser(response.user);
-      localStorage.setItem('user', JSON.stringify(response.user));
-      return true;
-    }
-    return false;
+  const login = (newToken: string, userData: User) => {
+    localStorage.setItem('authToken', newToken);
+    localStorage.setItem('authUser', JSON.stringify(userData));
+    setToken(newToken);
+    setUser(userData);
+    setIsAuthenticated(true);
   };
 
   const logout = () => {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('authUser');
+    setToken(null);
     setUser(null);
-    localStorage.removeItem('user');
+    setIsAuthenticated(false);
   };
 
-  const value = {
-    user,
-    isAuthenticated: !!user,
-    login,
-    signup,
-    logout,
-  };
+  return (
+    <AuthContext.Provider value={{ isAuthenticated, token, loading, user, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+export const useAuth = (): AuthContextType => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };

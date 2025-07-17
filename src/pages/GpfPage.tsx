@@ -6,6 +6,7 @@ import Navbar from '../components/Navbar';
 import { GpfTransaction } from '../utils/mockData';
 import { getGpfStats, getGpfTransactions } from '../services/apiService';
 import { Filter, Download, Info, Send, UserCheck, UserX, Loader } from 'lucide-react';
+import { cleanFilters } from '../utils/cleanFilters';
 
 const GpfPage: React.FC = () => {
   const [statusCounts, setStatusCounts] = useState({ JSON_SENT: 0, HRMS_RECEIVED: 0, HRMS_REJECTED: 0 });
@@ -18,7 +19,8 @@ const GpfPage: React.FC = () => {
   const fetchStats = useCallback(async () => {
     setIsStatsLoading(true);
     try {
-      const counts = await getGpfStats(filters);
+      const cleaned = cleanFilters(filters);
+      const counts = await getGpfStats(cleaned);
       setStatusCounts(counts);
     } catch (error) {
       console.error("Failed to fetch GPF stats:", error);
@@ -34,7 +36,8 @@ const GpfPage: React.FC = () => {
     }
     setIsTableLoading(true);
     try {
-      const data = await getGpfTransactions(selectedStatus, filters);
+      const cleaned = cleanFilters(filters);
+      const data = await getGpfTransactions(selectedStatus, cleaned);
       setTableData(data);
     } catch (error) {
       console.error("Failed to fetch GPF transactions:", error);

@@ -6,6 +6,7 @@ import Navbar from '../components/Navbar';
 import { GemsTransaction } from '../utils/mockData';
 import { getGemsStats, getGemsTransactions } from '../services/apiService';
 import { Filter, Eye, EyeOff, Download, Info, Send, FileText, CheckCircle, XCircle, CheckSquare, XSquare, Loader } from 'lucide-react';
+import { cleanFilters } from '../utils/cleanFilters';
 
 const GemsPage: React.FC = () => {
   const [statusCounts, setStatusCounts] = useState({ JSON_SENT: 0, PDF_SENT: 0, HRMS_RECEIVED: 0, HRMS_REJECTED: 0, DDO_RECEIVED: 0, DDO_REJECTED: 0 });
@@ -19,7 +20,8 @@ const GemsPage: React.FC = () => {
   const fetchStats = useCallback(async () => {
     setIsStatsLoading(true);
     try {
-      const counts = await getGemsStats(filters);
+      const cleaned = cleanFilters(filters);
+      const counts = await getGemsStats(cleaned);
       setStatusCounts(counts);
     } catch (error) {
       console.error("Failed to fetch GEMS stats:", error);
@@ -35,7 +37,8 @@ const GemsPage: React.FC = () => {
     }
     setIsTableLoading(true);
     try {
-      const data = await getGemsTransactions(selectedStatus, filters);
+      const cleaned = cleanFilters(filters);
+      const data = await getGemsTransactions(selectedStatus, cleaned);
       setTableData(data);
     } catch (error) {
       console.error("Failed to fetch GEMS transactions:", error);
